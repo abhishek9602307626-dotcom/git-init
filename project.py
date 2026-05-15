@@ -1,265 +1,464 @@
+# =========================================================
+# FAST ULTIMATE IMAGE PROCESSING WEBSITE
+# =========================================================
+
 import streamlit as st
 import cv2
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
-from io import BytesIO
 
-# ---------------- PAGE CONFIG ----------------
+# =========================================================
+# PAGE CONFIG
+# =========================================================
 
 st.set_page_config(
-    page_title="Digital Image Processing Website",
+    page_title="Fast Image Processing Website",
     layout="wide"
 )
 
-st.title("📷 Digital Image Processing Website")
-st.write("Built using Python, OpenCV and Streamlit")
+st.title("⚡ Fast Ultimate Image Processing Website")
 
-# ---------------- SIDEBAR ----------------
-
-st.sidebar.title("Image Processing Menu")
+# =========================================================
+# SIDEBAR MENU
+# =========================================================
 
 option = st.sidebar.selectbox(
-    "Choose Operation",
+    "Select Operation",
     [
-        "Original",
+        "Original Image",
         "Black & White",
         "Blur Filter",
         "Edge Detection",
         "Brightness & Contrast",
         "Rotate Image",
         "Resize Image",
+        "Flip Image",
         "Histogram",
         "Fourier Transform",
-        "Draw Shapes",
+        "Thresholding",
+        "RGB Channel Split",
+        "Negative Image",
+        "Morphological Operations",
         "Add Text",
-        "Image Information",
-        "Real-Time Webcam Filter"
+        "Face Detection",
+        "Color Detection",
+        "Crop Tool",
+        "Watermark",
+        "Oil Painting",
+        "Image Information"
     ]
 )
 
-# ---------------- IMAGE UPLOAD ----------------
+# =========================================================
+# IMAGE SOURCE
+# =========================================================
 
-uploaded_file = st.file_uploader(
-    "Upload an Image",
-    type=["jpg", "png", "jpeg"]
+st.sidebar.subheader("📤 Image Source")
+
+input_option = st.sidebar.radio(
+    "Choose Input Method",
+    [
+        "Upload Image",
+        "Laptop Camera"
+    ]
 )
 
-# ---------------- MAIN PROCESSING ----------------
+image = None
 
-if uploaded_file is not None:
+# =========================================================
+# UPLOAD IMAGE
+# =========================================================
 
-    image = Image.open(uploaded_file)
+if input_option == "Upload Image":
 
-    img = np.array(image)
+    uploaded_file = st.file_uploader(
+        "Upload Image",
+        type=["jpg", "jpeg", "png"]
+    )
 
-    original = img.copy()
+    if uploaded_file is not None:
 
-    # Convert RGBA to RGB if needed
-    if len(img.shape) == 3 and img.shape[2] == 4:
-        img = cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)
+        pil_image = Image.open(uploaded_file)
 
-    # ---------------- BEFORE / AFTER ----------------
+        # FAST RESIZE
+        pil_image.thumbnail((900, 900))
 
-    col1, col2 = st.columns(2)
+        image = np.array(pil_image)
 
-    with col1:
-        st.subheader("Original Image")
-        st.image(original, use_container_width=True)
+# =========================================================
+# LAPTOP CAMERA INPUT
+# =========================================================
 
-    processed_img = img.copy()
+elif input_option == "Laptop Camera":
 
-    # ---------------- BLACK & WHITE ----------------
+    st.info("📸 Take Photo From Laptop Camera")
 
-    if option == "Black & White":
+    camera_image = st.camera_input("Take Photo")
 
-        processed_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    if camera_image is not None:
 
-    # ---------------- BLUR FILTER ----------------
+        pil_image = Image.open(camera_image)
+
+        pil_image.thumbnail((900, 900))
+
+        image = np.array(pil_image)
+
+        st.success("✅ Photo Captured Successfully")
+
+# =========================================================
+# MAIN PROGRAM
+# =========================================================
+
+if image is not None:
+
+    # RGB TO BGR
+    if len(image.shape) == 3:
+
+        image = cv2.cvtColor(
+            image,
+            cv2.COLOR_RGB2BGR
+        )
+
+    processed_img = image.copy()
+
+    # =====================================================
+    # ORIGINAL IMAGE
+    # =====================================================
+
+    if option == "Original Image":
+
+        processed_img = image.copy()
+
+    # =====================================================
+    # BLACK & WHITE
+    # =====================================================
+
+    elif option == "Black & White":
+
+        processed_img = cv2.cvtColor(
+            image,
+            cv2.COLOR_BGR2GRAY
+        )
+
+    # =====================================================
+    # BLUR FILTER
+    # =====================================================
 
     elif option == "Blur Filter":
 
-        k = st.sidebar.slider("Kernel Size", 1, 31, 15)
+        blur_value = st.slider(
+            "Blur Strength",
+            1,
+            15,
+            5
+        )
 
-        if k % 2 == 0:
-            k += 1
+        processed_img = cv2.GaussianBlur(
+            image,
+            (blur_value * 2 + 1, blur_value * 2 + 1),
+            0
+        )
 
-        processed_img = cv2.GaussianBlur(img, (k, k), 0)
-
-    # ---------------- EDGE DETECTION ----------------
+    # =====================================================
+    # EDGE DETECTION
+    # =====================================================
 
     elif option == "Edge Detection":
 
-        low = st.sidebar.slider("Lower Threshold", 0, 255, 100)
+        gray = cv2.cvtColor(
+            image,
+            cv2.COLOR_BGR2GRAY
+        )
 
-        high = st.sidebar.slider("Upper Threshold", 0, 255, 200)
+        t1 = st.slider(
+            "Threshold 1",
+            0,
+            255,
+            100
+        )
 
-        processed_img = cv2.Canny(img, low, high)
+        t2 = st.slider(
+            "Threshold 2",
+            0,
+            255,
+            200
+        )
 
-    # ---------------- BRIGHTNESS & CONTRAST ----------------
+        processed_img = cv2.Canny(
+            gray,
+            t1,
+            t2
+        )
+
+    # =====================================================
+    # BRIGHTNESS & CONTRAST
+    # =====================================================
 
     elif option == "Brightness & Contrast":
 
-        brightness = st.sidebar.slider("Brightness", -100, 100, 0)
+        brightness = st.slider(
+            "Brightness",
+            -100,
+            100,
+            0
+        )
 
-        contrast = st.sidebar.slider("Contrast", 1.0, 3.0, 1.0)
+        contrast = st.slider(
+            "Contrast",
+            0.5,
+            3.0,
+            1.0
+        )
 
         processed_img = cv2.convertScaleAbs(
-            img,
+            image,
             alpha=contrast,
             beta=brightness
         )
 
-    # ---------------- ROTATE IMAGE ----------------
+    # =====================================================
+    # ROTATE IMAGE
+    # =====================================================
 
     elif option == "Rotate Image":
 
-        rotate_option = st.sidebar.selectbox(
-            "Rotation",
-            [
-                "90 Clockwise",
-                "90 CounterClockwise",
-                "180"
-            ]
+        angle = st.slider(
+            "Angle",
+            0,
+            360,
+            90
         )
 
-        if rotate_option == "90 Clockwise":
-            processed_img = cv2.rotate(
-                img,
-                cv2.ROTATE_90_CLOCKWISE
-            )
+        h, w = image.shape[:2]
 
-        elif rotate_option == "90 CounterClockwise":
-            processed_img = cv2.rotate(
-                img,
-                cv2.ROTATE_90_COUNTERCLOCKWISE
-            )
+        matrix = cv2.getRotationMatrix2D(
+            (w // 2, h // 2),
+            angle,
+            1
+        )
 
-        elif rotate_option == "180":
-            processed_img = cv2.rotate(
-                img,
-                cv2.ROTATE_180
-            )
+        processed_img = cv2.warpAffine(
+            image,
+            matrix,
+            (w, h)
+        )
 
-    # ---------------- RESIZE IMAGE ----------------
+    # =====================================================
+    # RESIZE IMAGE
+    # =====================================================
 
     elif option == "Resize Image":
 
-        width = st.sidebar.slider("Width", 100, 1000, 300)
+        width = st.slider(
+            "Width",
+            100,
+            1200,
+            image.shape[1]
+        )
 
-        height = st.sidebar.slider("Height", 100, 1000, 300)
+        height = st.slider(
+            "Height",
+            100,
+            1200,
+            image.shape[0]
+        )
 
-        processed_img = cv2.resize(img, (width, height))
+        processed_img = cv2.resize(
+            image,
+            (width, height)
+        )
 
-    # ---------------- HISTOGRAM ----------------
+    # =====================================================
+    # FLIP IMAGE
+    # =====================================================
 
-    elif option == "Histogram":
+    elif option == "Flip Image":
 
-        fig, ax = plt.subplots()
+        flip_type = st.selectbox(
+            "Flip Type",
+            ["Horizontal", "Vertical"]
+        )
 
-        if len(img.shape) == 3:
+        if flip_type == "Horizontal":
 
-            colors = ('b', 'g', 'r')
-
-            for i, color in enumerate(colors):
-
-                hist = cv2.calcHist(
-                    [img],
-                    [i],
-                    None,
-                    [256],
-                    [0, 256]
-                )
-
-                ax.plot(hist, color=color)
+            processed_img = cv2.flip(
+                image,
+                1
+            )
 
         else:
 
-            hist = cv2.calcHist(
-                [img],
-                [0],
-                None,
-                [256],
-                [0, 256]
+            processed_img = cv2.flip(
+                image,
+                0
             )
 
-            ax.plot(hist)
+    # =====================================================
+    # HISTOGRAM
+    # =====================================================
 
-        ax.set_title("Histogram")
+    elif option == "Histogram":
+
+        gray = cv2.cvtColor(
+            image,
+            cv2.COLOR_BGR2GRAY
+        )
+
+        hist = cv2.calcHist(
+            [gray],
+            [0],
+            None,
+            [256],
+            [0, 256]
+        )
+
+        fig, ax = plt.subplots(figsize=(4, 2))
+
+        ax.plot(hist)
 
         st.pyplot(fig)
 
-        processed_img = img
+        processed_img = gray
 
-    # ---------------- FOURIER TRANSFORM ----------------
+    # =====================================================
+    # FOURIER TRANSFORM
+    # =====================================================
 
     elif option == "Fourier Transform":
 
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(
+            image,
+            cv2.COLOR_BGR2GRAY
+        )
 
         f = np.fft.fft2(gray)
 
         fshift = np.fft.fftshift(f)
 
-        magnitude = 20 * np.log(np.abs(fshift) + 1)
-
-        processed_img = magnitude
-
-    # ---------------- DRAW SHAPES ----------------
-
-    elif option == "Draw Shapes":
-
-        shape = st.sidebar.selectbox(
-            "Select Shape",
-            [
-                "Rectangle",
-                "Circle",
-                "Line"
-            ]
+        magnitude = 20 * np.log(
+            np.abs(fshift) + 1
         )
 
-        processed_img = img.copy()
+        processed_img = cv2.normalize(
+            magnitude,
+            None,
+            0,
+            255,
+            cv2.NORM_MINMAX
+        ).astype(np.uint8)
 
-        if shape == "Rectangle":
+    # =====================================================
+    # THRESHOLDING
+    # =====================================================
 
-            cv2.rectangle(
-                processed_img,
-                (50, 50),
-                (300, 300),
-                (0, 255, 0),
-                3
+    elif option == "Thresholding":
+
+        gray = cv2.cvtColor(
+            image,
+            cv2.COLOR_BGR2GRAY
+        )
+
+        threshold_value = st.slider(
+            "Threshold Value",
+            0,
+            255,
+            127
+        )
+
+        _, processed_img = cv2.threshold(
+            gray,
+            threshold_value,
+            255,
+            cv2.THRESH_BINARY
+        )
+
+    # =====================================================
+    # RGB CHANNEL SPLIT
+    # =====================================================
+
+    elif option == "RGB Channel Split":
+
+        b, g, r = cv2.split(image)
+
+        channel = st.selectbox(
+            "Select Channel",
+            ["Red", "Green", "Blue"]
+        )
+
+        if channel == "Red":
+
+            processed_img = r
+
+        elif channel == "Green":
+
+            processed_img = g
+
+        else:
+
+            processed_img = b
+
+    # =====================================================
+    # NEGATIVE IMAGE
+    # =====================================================
+
+    elif option == "Negative Image":
+
+        processed_img = 255 - image
+
+    # =====================================================
+    # MORPHOLOGICAL OPERATIONS
+    # =====================================================
+
+    elif option == "Morphological Operations":
+
+        gray = cv2.cvtColor(
+            image,
+            cv2.COLOR_BGR2GRAY
+        )
+
+        _, binary = cv2.threshold(
+            gray,
+            127,
+            255,
+            cv2.THRESH_BINARY
+        )
+
+        kernel = np.ones((3, 3), np.uint8)
+
+        morph_type = st.selectbox(
+            "Operation",
+            ["Erosion", "Dilation"]
+        )
+
+        if morph_type == "Erosion":
+
+            processed_img = cv2.erode(
+                binary,
+                kernel,
+                iterations=1
             )
 
-        elif shape == "Circle":
+        else:
 
-            cv2.circle(
-                processed_img,
-                (250, 250),
-                100,
-                (255, 0, 0),
-                3
+            processed_img = cv2.dilate(
+                binary,
+                kernel,
+                iterations=1
             )
 
-        elif shape == "Line":
-
-            cv2.line(
-                processed_img,
-                (50, 50),
-                (400, 400),
-                (0, 0, 255),
-                3
-            )
-
-    # ---------------- ADD TEXT ----------------
+    # =====================================================
+    # ADD TEXT
+    # =====================================================
 
     elif option == "Add Text":
 
-        text = st.sidebar.text_input(
+        text = st.text_input(
             "Enter Text",
-            "OpenCV Project"
+            "Hello"
         )
 
-        processed_img = img.copy()
+        processed_img = image.copy()
 
         cv2.putText(
             processed_img,
@@ -267,96 +466,213 @@ if uploaded_file is not None:
             (50, 100),
             cv2.FONT_HERSHEY_SIMPLEX,
             2,
-            (255, 0, 0),
+            (0, 255, 0),
             3
         )
 
-    # ---------------- IMAGE INFORMATION ----------------
+    # =====================================================
+    # FACE DETECTION
+    # =====================================================
+
+    elif option == "Face Detection":
+
+        gray = cv2.cvtColor(
+            image,
+            cv2.COLOR_BGR2GRAY
+        )
+
+        face_cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades +
+            'haarcascade_frontalface_default.xml'
+        )
+
+        faces = face_cascade.detectMultiScale(
+            gray,
+            1.1,
+            4
+        )
+
+        processed_img = image.copy()
+
+        for (x, y, w, h) in faces:
+
+            cv2.rectangle(
+                processed_img,
+                (x, y),
+                (x + w, y + h),
+                (0, 255, 0),
+                2
+            )
+
+    # =====================================================
+    # COLOR DETECTION
+    # =====================================================
+
+    elif option == "Color Detection":
+
+        hsv = cv2.cvtColor(
+            image,
+            cv2.COLOR_BGR2HSV
+        )
+
+        lower = np.array([0, 120, 70])
+        upper = np.array([10, 255, 255])
+
+        mask = cv2.inRange(
+            hsv,
+            lower,
+            upper
+        )
+
+        processed_img = cv2.bitwise_and(
+            image,
+            image,
+            mask=mask
+        )
+
+    # =====================================================
+    # CROP TOOL
+    # =====================================================
+
+    elif option == "Crop Tool":
+
+        h, w = image.shape[:2]
+
+        x1 = st.slider("Start X", 0, w - 1, 0)
+        y1 = st.slider("Start Y", 0, h - 1, 0)
+
+        x2 = st.slider("End X", x1 + 1, w, w)
+        y2 = st.slider("End Y", y1 + 1, h, h)
+
+        processed_img = image[
+            y1:y2,
+            x1:x2
+        ]
+
+    # =====================================================
+    # WATERMARK
+    # =====================================================
+
+    elif option == "Watermark":
+
+        watermark = st.text_input(
+            "Watermark",
+            "© My Website"
+        )
+
+        processed_img = image.copy()
+
+        cv2.putText(
+            processed_img,
+            watermark,
+            (30, image.shape[0] - 30),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (255, 255, 255),
+            2
+        )
+
+    # =====================================================
+    # OIL PAINTING
+    # =====================================================
+
+    elif option == "Oil Painting":
+
+        processed_img = cv2.stylization(
+            image,
+            sigma_s=40,
+            sigma_r=0.4
+        )
+
+    # =====================================================
+    # IMAGE INFORMATION
+    # =====================================================
 
     elif option == "Image Information":
 
-        st.subheader("Image Information")
+        st.subheader("📄 Image Details")
 
-        st.write(f"Width : {img.shape[1]}")
+        st.write(f"Width: {image.shape[1]}")
+        st.write(f"Height: {image.shape[0]}")
+        st.write(f"Channels: {image.shape[2]}")
+        st.write(f"Data Type: {image.dtype}")
 
-        st.write(f"Height : {img.shape[0]}")
+        processed_img = image.copy()
 
-        st.write(f"Channels : {img.shape[2]}")
+    # =====================================================
+    # BEFORE & AFTER
+    # =====================================================
 
-        st.write(f"Image Shape : {img.shape}")
+    st.subheader("📷 Before & After Comparison")
 
-        processed_img = img
+    col1, col2 = st.columns(2)
 
-    # ---------------- REAL-TIME WEBCAM ----------------
+    with col1:
 
-    elif option == "Real-Time Webcam Filter":
+        st.markdown("### Original Image")
 
-        run = st.checkbox("Start Webcam")
-
-        FRAME_WINDOW = st.image([])
-
-        camera = cv2.VideoCapture(0)
-
-        while run:
-
-            ret, frame = camera.read()
-
-            if not ret:
-                st.write("Camera Not Working")
-                break
-
-            gray = cv2.cvtColor(
-                frame,
-                cv2.COLOR_BGR2GRAY
-            )
-
-            FRAME_WINDOW.image(gray)
-
-        camera.release()
-
-        processed_img = img
-
-    # ---------------- SHOW OUTPUT ----------------
+        st.image(
+            cv2.cvtColor(
+                image,
+                cv2.COLOR_BGR2RGB
+            ),
+            width=300
+        )
 
     with col2:
 
-        st.subheader("Processed Image")
+        st.markdown("### Processed Image")
 
-        st.image(
-            processed_img,
-            use_container_width=True
-        )
+        if len(processed_img.shape) == 2:
 
-    # ---------------- DOWNLOAD BUTTON ----------------
+            st.image(
+                processed_img,
+                width=300
+            )
 
-    st.subheader("Download Processed Image")
+        else:
 
-    if len(processed_img.shape) == 2:
+            st.image(
+                cv2.cvtColor(
+                    processed_img,
+                    cv2.COLOR_BGR2RGB
+                ),
+                width=300
+            )
 
-        save_img = Image.fromarray(processed_img)
+    # =====================================================
+    # DOWNLOAD BUTTON
+    # =====================================================
 
-    else:
+    if processed_img is not None:
 
-        save_img = Image.fromarray(
-            cv2.cvtColor(
+        if len(processed_img.shape) == 2:
+
+            download_img = processed_img
+
+        else:
+
+            download_img = cv2.cvtColor(
                 processed_img,
                 cv2.COLOR_BGR2RGB
             )
+
+        result = cv2.imencode(
+            '.png',
+            np.array(download_img)
+        )[1].tobytes()
+
+        st.download_button(
+            label="⬇️ Download Processed Image",
+            data=result,
+            file_name="processed_image.png",
+            mime="image/png"
         )
 
-    buf = BytesIO()
-
-    save_img.save(buf, format="PNG")
-
-    byte_im = buf.getvalue()
-
-    st.download_button(
-        label="Download Image",
-        data=byte_im,
-        file_name="processed_image.png",
-        mime="image/png"
-    )
+# =========================================================
+# NO IMAGE
+# =========================================================
 
 else:
 
-    st.info("Please upload an image to begin.")
+    st.info("📤 Please upload or capture an image")
